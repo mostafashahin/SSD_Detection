@@ -1,4 +1,4 @@
-import glob,os
+import glob, os, subprocess
 from os.path import normpath, splitext, join, isfile
 def Get_Segnments_From_TextGrid_Short(TextGrid_File,Speaker='CHILD'):
     with open(TextGrid_File,'r') as fTextGrid:
@@ -41,4 +41,13 @@ def Write_Wave_Segments_To_File(dWaves_Segments,sOutput_File):
     return
 
 
-#def Generate
+def Extract_Features_openSmile(sWave_Segments_File, sConfig_File='../openSmile/config/gemaps/GeMAPSv01a.conf', sSegment_Level_csv_File='output_GeMAPs.csv', sFram_Level_csv_File=''):
+    with open(sWave_Segments_File) as fSegments:
+        for sLine in fSegments:
+            sWave_File, sStart, sEnd = sLine.split(';')
+            command = ['../openSmile/bin/SMILExtract','-C',sConfig_File,'-I',sWave_File,'-start',sStart,'-end',sEnd,'-instname',sWave_File,'-csvoutput',sSegment_Level_csv_File]
+            subprocess.run(command)
+    return
+
+
+
