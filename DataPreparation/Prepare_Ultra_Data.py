@@ -22,7 +22,7 @@ def Select_Data(Dataset_Folder, TextGrid_Folder, Sessions='', Tasks=[], Train_Sp
             sTextGrid_Name = '-'.join([sSpeakerID, sUttID])+'.TextGrid'
             sTextGrid_File = join(TextGrid_Folder,sTextGrid_Name)
             if isfile(sTextGrid_File):
-                dWaves_Segments[sWave_File] = Get_Segnments_From_TextGrid_Short(sTextGrid_File)
+                dWaves_Segments[sWave_File+sSpeakerID] = Get_Segnments_From_TextGrid_Short(sTextGrid_File)
             else:
                 print(sTextGrid_File)
             #lWavs_TextGrids.append((sWave_File,os.path.join(TextGrid_Folder,sTextGrid_Name)))
@@ -36,7 +36,7 @@ def Select_Data(Dataset_Folder, TextGrid_Folder, Sessions='', Tasks=[], Train_Sp
                 sTextGrid_Name = '-'.join([sSpeakerID, sSessionID, sUttID])+'.TextGrid'
                 sTextGrid_File = join(TextGrid_Folder,sTextGrid_Name)
                 if isfile(sTextGrid_File):
-                    dWaves_Segments[sWave_File] = Get_Segnments_From_TextGrid_Short(sTextGrid_File)
+                    dWaves_Segments[sWave_File+sSpeakerID] = Get_Segnments_From_TextGrid_Short(sTextGrid_File)
                 else:
                     print(sTextGrid_File)
                 #lWavs_TextGrids.append((sWave_File,os.path.join(TextGrid_Folder,sTextGrid_Name)))
@@ -53,13 +53,15 @@ def Write_Wave_Segments_To_File(dWaves_Segments,sOutput_File):
 def Extract_Features_openSmile(sWave_Segments_File, sConfig_File='../openSmile/config/gemaps/GeMAPSv01a.conf', sSegment_Level_csv_File='output_GeMAPs.csv', sFram_Level_csv_File=''):
     with open(sWave_Segments_File) as fSegments:
         for sLine in fSegments:
-            sWave_File, sStart, sEnd = sLine.split(';')
+            sWave_File_SpkID, sStart, sEnd = sLine.split(';')
+            sWave_File = sWave_File_SpkID[:-3]
             print('Now Processing, ', sWave_File, ' From ', sStart, ' To ', sEnd )
-            command = ['SMILExtract','-C',sConfig_File,'-I',sWave_File,'-start',sStart,'-end',sEnd,'-instname',sWave_File,'-class','1','-csvoutput',sSegment_Level_csv_File]
+            command = ['SMILExtract','-C',sConfig_File,'-I',sWave_File,'-start',sStart,'-end',sEnd,'-instname',sWave_File_SpkID,'-class','1','-csvoutput',sSegment_Level_csv_File]
             subprocess.run(command)
     return
 
-#def Split_Wavs_Train_Test_From_Speaker_List():
+#def Split_Wavs_Train_Test_From_Speaker_List(aDataSets,sSplitFile):
+
 #    #i/p --> Array of tuples each (list_of_waves,list_train_speakers,list_test_speakers,class)
     
 
