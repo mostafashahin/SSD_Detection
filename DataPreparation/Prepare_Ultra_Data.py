@@ -1,24 +1,27 @@
 import glob, os, subprocess
 from os.path import normpath, splitext, join, isfile
+import pandas as pd
+import numpy as np
+MAX_SAMPLES_NUMBER = 1000000
 def Get_Segnments_From_TextGrid_Short(TextGrid_File,Speaker='CHILD'):
     with open(TextGrid_File,'r') as fTextGrid:
         TextGrid_content = fTextGrid.read().splitlines()
     aSegments = [(TextGrid_content[i-2],TextGrid_content[i-1]) for i in range(len(TextGrid_content)) if TextGrid_content[i].find(Speaker)!=-1]
     return aSegments
 
-def Select_Data(Dataset_Folder, TextGrid_Folder, Sessions='', Tasks=[], Train_Spkrs_List=[],Test_Spkrs_List=[]):
+def Select_Data(Dataset_Folder, TextGrid_Folder, Sessions='', Tasks=[]):#, Train_Spkrs_List=[],Test_Spkrs_List=[]):
     #List All wavs in the Wave_Folder recercievely
-    dWaves_Segments_Train = {}
-    dWaves_Segments_Test  = {}
+    dWaves_Segments = {}
+    #dWaves_Segments_Test  = {}
     lWave_Files = glob.glob(join(Dataset_Folder,'**','*[' + ''.join(Tasks) + '].wav'), recursive=True)
     #print(lWave_Files)
     for sWave_File in lWave_Files:
         if Sessions=='':
             sSpeakerID, sUttID = normpath(splitext(sWave_File)[0]).split(os.sep)[-2:]
-            if sSpeakerID in Train_Spkrs_List:
-                dWaves_Segments = dWaves_Segments_Train
-            else:
-                dWaves_Segments = dWaves_Segments_Test
+            #if sSpeakerID in Train_Spkrs_List:
+            #    dWaves_Segments = dWaves_Segments_Train
+            #else:
+            #    dWaves_Segments = dWaves_Segments_Test
             sTextGrid_Name = '-'.join([sSpeakerID, sUttID])+'.TextGrid'
             sTextGrid_File = join(TextGrid_Folder,sTextGrid_Name)
             if isfile(sTextGrid_File):
@@ -28,10 +31,10 @@ def Select_Data(Dataset_Folder, TextGrid_Folder, Sessions='', Tasks=[], Train_Sp
             #lWavs_TextGrids.append((sWave_File,os.path.join(TextGrid_Folder,sTextGrid_Name)))
         else:
             sSpeakerID, sSessionID, sUttID = os.path.normpath(splitext(sWave_File)[0]).split(os.sep)[-3:]
-            if sSpeakerID in Train_Spkrs_List:
-                dWaves_Segments = dWaves_Segments_Train
-            else:
-                dWaves_Segments = dWaves_Segments_Test
+            #if sSpeakerID in Train_Spkrs_List:
+            #    dWaves_Segments = dWaves_Segments_Train
+            #else:
+            #    dWaves_Segments = dWaves_Segments_Test
             if sSessionID in Sessions:
                 sTextGrid_Name = '-'.join([sSpeakerID, sSessionID, sUttID])+'.TextGrid'
                 sTextGrid_File = join(TextGrid_Folder,sTextGrid_Name)
@@ -40,7 +43,7 @@ def Select_Data(Dataset_Folder, TextGrid_Folder, Sessions='', Tasks=[], Train_Sp
                 else:
                     print(sTextGrid_File)
                 #lWavs_TextGrids.append((sWave_File,os.path.join(TextGrid_Folder,sTextGrid_Name)))
-    return dWaves_Segments_Train, dWaves_Segments_Test
+    return dWaves_Segments #_Train, dWaves_Segments_Test
 
 def Write_Wave_Segments_To_File(dWaves_Segments,sOutput_File):
     with open(sOutput_File,'w') as fOutput_File:
@@ -60,7 +63,57 @@ def Extract_Features_openSmile(sWave_Segments_File, sConfig_File='../openSmile/c
             subprocess.run(command)
     return
 
-#def Split_Wavs_Train_Test_From_Speaker_List(aDataSets,sSplitFile):
+def Split_Wavs_Train_Test_From_Speaker_List(aDataSets,sSplitFile,cv=False,nDim = 63):
+    X_all = np.empty((MAX_SAMPLES_NUMBER,nDim),dtype=float)
+    y_all = np.zeros((MAX_SAMPLES_NUMBER),dtype=int)
+    iPnt = 0
+    #Load sSplitFile
+    pdSplitData = pd.read_csv(sSplitFile,sep=',')
+    iNum_CV = pdSplitData['CV'].max()
+    print(iNum_CV,MAX_SAMPLES_NUMBER/iNum_CV)
+    x = np.zeros(int((MAX_SAMPLES_NUMBER/iNum_CV)),dtype=int)
+    aCV = []
+    for i in range(iNum_CV):
+        aCV.append([np.zeros(0,dtype=int),np.zeros(0,dtype=int)])
+    for dataset in aDataSets:
+        sDataset_Name, pdDataset_Data = dataset
+        aDataset_Mask = pdSplitData['dataset'] == sDataset_Name
+        X = pdDataset_Data.iloc[:,1:].values
+        y = np.zeros(X.shape[0])
+        aSpeakers = [ls[-4:-1] for ls in pdDataset_Data['name']]
+        iNum_Classes = pdSplitData['Class'].max()
+        for cls in range(1,iNum_Classes+1):
+            aSpkrs = list(pdSplitData.loc[(pdSplitData['Class']==cls) & aDataset_Mask,'SpkID'])
+            aSpkrs_indx = [i for i in range(len(aSpeakers)) if aSpeakers[i] in aSpkrs]
+            print(sDataset_Name,cls,len(aSpkrs),len(aSpkrs_indx))
+            y[aSpkrs_indx] = cls
+        X_all[iPnt:iPnt+X.shape[0]] = X
+        y_all[iPnt:iPnt+X.shape[0]] = y
+        for iCV in range(iNum_CV):
+            aSpkrs_cv = list(pdSplitData.loc[(pdSplitData['CV']==iCV+1) & aDataset_Mask,'SpkID'])
+            #print(sDataset_Name,iCV+1,aSpkrs_cv)
+            aSpkrs_cv_indx = [i+iPnt for i in range(len(aSpeakers)) if aSpeakers[i] in aSpkrs_cv]
+            aSpkrs_train_indx = [i+iPnt for i in range(len(aSpeakers)) if i+iPnt not in aSpkrs_cv_indx]
+            #print(iCV+1,len(aSpkrs_cv_indx),len(aSpkrs_train_indx))
+            #print(aSpkrs_cv_indx[0],aSpkrs_train_indx[0],iPnt)
+            aCV[iCV][1] = np.r_[aCV[iCV][1],aSpkrs_cv_indx].astype(int)
+            aCV[iCV][0] = np.r_[aCV[iCV][0],aSpkrs_train_indx].astype(int)
+            #print(iCV+1,aCV[iCV][1].shape, aCV[iCV][0].shape)
+        iPnt += X.shape[0]
+        #print(iPnt)
+    X_all = X_all[:iPnt]
+    y_all = y_all[:iPnt]
+
+
+    return X_all, y_all, aCV
+
+
+
+
+
+
+
+
 
 #    #i/p --> Array of tuples each (list_of_waves,list_train_speakers,list_test_speakers,class)
     
