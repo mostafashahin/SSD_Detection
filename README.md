@@ -75,4 +75,68 @@ Expriement #3:
  -- {'SVM__C': 0.1, 'SVM__gamma': 10, 'SVM__kernel': 'rbf'}
  -- average 0.8501616031027796
 
+XXXXXXXXXXXXXXXXXXXXXXXXXXPrevious results not accurateXXXXXXXXXXXXXX
 
+Expriement #3+:
+
+- GeMAPs features extracted from each segment
+- Normalization using MinMax [0,1]
+- Perform Segment Classification TD vs SSD
+- Using all the speakers UXTD, UXSSD, UPX (28 SSD, 58 TD)
+- Two BL sessions from UXSSD and UPX, A, B, C, F
+- 4 250000.0
+- UXTD 1 0 0
+- UXSSD 1 8 4399
+- UPX 1 20 8708
+- 0 4287;9758 482;3349
+- 1 3995;9895 774;3212
+- 2 4365;10298 404;2809
+- 3 4066;9370 703;3737
+- 4 fold CV, each has (Training (21 SSD, 51 TD), Validation (7 SSD, 7 TD))
+- The children from SSD and TD age and gender matching when possible
+- The normalization fit on the training portion only for each CV
+- ---- the metrics is balanced_score because the number of segments of the SSD children is much greater than the typically development. 
+- kernels = ['linear', 'rbf', 'sigmoid']
+- gamma = [100,10,1,0.1,1e-2,1e-3,1e-4]
+- C = [100,10,1,0.1,1e-2,1e-3,1e-4]
+
+- Results
+- -- SVM {'SVM__C': 100, 'SVM__gamma': 1, 'SVM__kernel': 'rbf'} 0.7303084431415353
+
+Experiment 4:
+
+- Same setup of 3+
+- Features eGeMAPs
+
+- Results
+- -- SVM {'SVM__C': 10, 'SVM__gamma': 1, 'SVM__kernel': 'rbf'} 0.759606545167094
+
+
+Experiment 5:
+- Same setup of 4
+- Use only one BL session and exclude "F: conversation files" from the SSD data to reduce the number of segments from SSD to balance the model
+4 250000.0
+UXTD 1 0 0
+UXSSD 1 8 2858
+UPX 1 20 4927
+0 4287;5935 482;1850
+1 3995;5806 774;1979
+2 4365;6066 404;1719
+3 4066;5548 703;2237
+
+
+- Results:
+- -- SVM {'SVM__C': 10, 'SVM__gamma': 1, 'SVM__kernel': 'rbf'} 0.7882262068336758
+
+
+TO DO************************************************************
+1- report results on speaker level
+2- feature selection
+3- eGeMAPs features
+4- ComParE features
+5- Anomaly detection, OCSVM, LSTM
+6- In segment performance use F1 score and show confusion matrix
+7- In Anomaly detection use more healthy data, OREGON
+8- Use the ASD data for reporting result of Anomaly detection
+9- Use of our CAS dataset
+10 - 

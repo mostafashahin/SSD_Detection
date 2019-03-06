@@ -66,11 +66,13 @@ def Extract_Features_openSmile(sWave_Segments_File, sConfig_File='../openSmile/c
 def Split_Wavs_Train_Test_From_Speaker_List(aDataSets,sSplitFile,cv=False,nDim = 63):
     X_all = np.empty((MAX_SAMPLES_NUMBER,nDim),dtype=float)
     y_all = np.zeros((MAX_SAMPLES_NUMBER),dtype=int)
+    aSpkrs_all = []
     iPnt = 0
     #Load sSplitFile
     pdSplitData = pd.read_csv(sSplitFile,sep=',')
     iNum_CV = pdSplitData['CV'].max()
     print(iNum_CV,MAX_SAMPLES_NUMBER/iNum_CV)
+    iNum_Classes = pdSplitData['Class'].max()
     x = np.zeros(int((MAX_SAMPLES_NUMBER/iNum_CV)),dtype=int)
     aCV = []
     for i in range(iNum_CV):
@@ -78,10 +80,11 @@ def Split_Wavs_Train_Test_From_Speaker_List(aDataSets,sSplitFile,cv=False,nDim =
     for dataset in aDataSets:
         sDataset_Name, pdDataset_Data = dataset
         aDataset_Mask = pdSplitData['dataset'] == sDataset_Name
-        X = pdDataset_Data.iloc[:,1:].values
+        X = pdDataset_Data.iloc[:,2:].values
         y = np.zeros(X.shape[0])
         aSpeakers = [ls[-4:-1] for ls in pdDataset_Data['name']]
-        iNum_Classes = pdSplitData['Class'].max()
+        aSpkrs_all += [spkr+'_'+sDataset_Name for spkr in aSpeakers]
+        #iNum_Classes = pdSplitData['Class'].max()
         for cls in range(1,iNum_Classes+1):
             aSpkrs = list(pdSplitData.loc[(pdSplitData['Class']==cls) & aDataset_Mask,'SpkID'])
             aSpkrs_indx = [i for i in range(len(aSpeakers)) if aSpeakers[i] in aSpkrs]
@@ -103,9 +106,12 @@ def Split_Wavs_Train_Test_From_Speaker_List(aDataSets,sSplitFile,cv=False,nDim =
         #print(iPnt)
     X_all = X_all[:iPnt]
     y_all = y_all[:iPnt]
+    #Get Statistics
+    for i in range(len(aCV)):
+        cv = aCV[i]
+        print(str(i),';'.join(np.bincount(y_all[cv[0]]).astype(str)),';'.join(np.bincount(y_all[cv[1]]).astype(str)))
 
-
-    return X_all, y_all, aCV
+    return X_all, y_all, aSpkrs_all, aCV
 
 
 
