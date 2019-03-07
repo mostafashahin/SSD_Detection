@@ -109,7 +109,8 @@ Experiment 4:
 - Features eGeMAPs
 
 - Results
-- -- SVM {'SVM__C': 10, 'SVM__gamma': 1, 'SVM__kernel': 'rbf'} 0.759606545167094
+- -- SVM {'SVM__C': 10, 'SVM__gamma': 1, 'SVM__kernel': 'rbf'} 0.759606545167094 MaxMin Normalization
+- -- SVM {'SVM__C': 10, 'SVM__gamma': 0.01, 'SVM__kernel': 'rbf'} 0.7570786436031008 z normalization
 
 
 Experiment 5:
@@ -126,17 +127,20 @@ UPX 1 20 4927
 
 
 - Results:
-- -- SVM {'SVM__C': 10, 'SVM__gamma': 1, 'SVM__kernel': 'rbf'} 0.7882262068336758
+- -- SVM {'SVM__C': 10, 'SVM__gamma': 1, 'SVM__kernel': 'rbf'} 0.7882262068336758 Normalization (MaxMin)
+SVM {'SVM__C': 10, 'SVM__gamma': 0.01, 'SVM__kernel': 'rbf'} 0.7851423804412466 Normalization (z normalize)
+
+
 
 
 TO DO************************************************************
-1- report results on speaker level
-2- feature selection
-3- eGeMAPs features
-4- ComParE features
-5- Anomaly detection, OCSVM, LSTM
-6- In segment performance use F1 score and show confusion matrix
-7- In Anomaly detection use more healthy data, OREGON
-8- Use the ASD data for reporting result of Anomaly detection
-9- Use of our CAS dataset
-10 - 
+1. report results on speaker level
+2. feature selection
+3. eGeMAPs features
+4. ComParE features
+5. Anomaly detection, OCSVM, LSTM
+6. In segment performance use F1 score and show confusion matrix
+7. In Anomaly detection use more healthy data, OREGON
+8. Use the ASD data for reporting result of Anomaly detection
+9. Use of our CAS dataset
+10. Try data augmentation to increase the number of samples in the TD, maybe dublication of randomly selected samples. 

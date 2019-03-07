@@ -3,7 +3,7 @@ from joblib import dump, load
 import numpy as np
 import datetime as DT
 from sklearn.model_selection import GridSearchCV
-from sklearn.preprocessing import MinMaxScaler
+from sklearn.preprocessing import MinMaxScaler, StandardScaler
 from sklearn.pipeline import Pipeline
 from sklearn.metrics import f1_score, make_scorer, balanced_accuracy_score
 #svm params
@@ -15,7 +15,8 @@ dParams_SVC_linear = {'SVM__kernel':['linear'],'SVM__C':C}
 dParams_SVC_rbf_gamma = {'SVM__kernel':['rbf','sigmoid'],'SVM__C':C,'SVM__gamma':gamma}
 estimators[SVC()] = ['SVM',dParams_SVC_linear,dParams_SVC_rbf_gamma]
 
-Scaler = MinMaxScaler()
+#Scaler = MinMaxScaler()
+Scaler = StandardScaler()
 
 def GridSearchShallow(X, y, cv = 5, bSave_Model = False, prefix = ''):
     aTrainedModels = []
