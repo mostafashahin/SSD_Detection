@@ -111,7 +111,7 @@ def Split_Wavs_Train_Test_From_Speaker_List(aDataSets,sSplitFile,cv=False,nDim =
         cv = aCV[i]
         print(str(i),';'.join(np.bincount(y_all[cv[0]]).astype(str)),';'.join(np.bincount(y_all[cv[1]]).astype(str)))
 
-    return X_all, y_all, aSpkrs_all, aCV
+    return X_all, y_all, np.asarray(aSpkrs_all,dtype=str), aCV
 
 
 
