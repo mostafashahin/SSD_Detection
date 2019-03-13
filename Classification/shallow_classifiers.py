@@ -1,7 +1,8 @@
-from sklearn.svm import SVC
-from joblib import dump, load
 import numpy as np
 import datetime as DT
+import copy
+from sklearn.svm import SVC, OneClassSVM
+from joblib import dump, load
 from sklearn.model_selection import GridSearchCV
 from sklearn.preprocessing import MinMaxScaler, StandardScaler
 from sklearn.pipeline import Pipeline
@@ -9,14 +10,21 @@ from sklearn.metrics import f1_score, make_scorer, balanced_accuracy_score
 from sklearn.feature_selection import RFECV
 #svm params
 estimators = {}
+anomaly_detectors = {}
 C = [100,10,1,0.1,0.01,0.001]
 gamma = [100,10,1,0.1,0.01,0.001]
 #kernels = ['linear','rbf','sigmoid','poly']
 dParams_SVC_linear = {'SVM__kernel':['linear'],'SVM__C':C}
 dParams_SVC_rbf_gamma = {'SVM__kernel':['rbf','sigmoid'],'SVM__C':C,'SVM__gamma':gamma}
-estimators[SVC()] = ['SVM',dParams_SVC_linear,dParams_SVC_rbf_gamma]
+estimators[SVC(class_weight='balanced')] = ['SVM',dParams_SVC_linear,dParams_SVC_rbf_gamma]
 
-scaler = MinMaxScaler()
+#oneclass SVM params
+nu = [0.1, 0.2, 0.3, 0.5, 0.7, 0.9, 1]
+dParams_OCSVM_linear = {'OCSVM__kernel':['linear'],'OCSVM__nu':nu}
+dParams_OCSVM_rbf_gamma = {'OCSVM__kernel':['rbf','sigmoid'],'OCSVM__nu':nu,'OCSVM__gamma':gamma}
+anomaly_detectors[OneClassSVM()] = ['OCSVM', dParams_OCSVM_linear, dParams_OCSVM_rbf_gamma]
+
+scaler = MinMaxScaler(feature_range=(-3, 3))
 #Scaler = StandardScaler()
 
 scorer = make_scorer(balanced_accuracy_score)
@@ -34,6 +42,30 @@ def GridSearchShallow(X, y, cv = 5, bSave_Model = False, prefix = '', verbose = 
         pipline = Pipeline([('scaler',scaler),(name,estimator)])
         classifier = GridSearchCV(estimator = pipline, cv = cv, param_grid = aParams, verbose = verbose, n_jobs = n_jobs, scoring = scorer)
         classifier.fit(X,y)
+        print(name, classifier.best_params_, classifier.best_score_)
+        aTrainedModels.append(classifier)
+        if bSave_Model:
+            dump(classifier,name+'_'+str(DT.datetime.now().strftime("%Y-%m-%d_%H:%M:%S"))+prefix+'.jbl')
+    return aTrainedModels
+
+def GridSearchAnomaly(X, y, cv=5, iMain_class = 0, bSave_Model = False, prefix = '', verbose = 0, n_jobs = None):
+    aTrainedModels = []
+    y_anomaly = copy.deepcopy(y)
+    aMain_class_Mask = (y_anomaly == iMain_class)
+    aAnomaly_Mask = np.invert(aMain_class_Mask)
+    y_anomaly[aMain_class_Mask] = 1
+    y_anomaly[aAnomaly_Mask] = -1
+    if hasattr(cv,'__iter__'):
+        cv_anomaly = copy.deepcopy(cv)
+        for part in cv_anomaly:
+            part[0] = part[0][y_anomaly[part[0]] == 1]
+
+    print(y.min(),y.max(),y_anomaly.min(),y_anomaly.max())
+    for detector in anomaly_detectors:
+        name, aParams = anomaly_detectors[detector][0], anomaly_detectors[detector][1:]
+        pipline = Pipeline([('scaler',scaler),(name,detector)])
+        classifier = GridSearchCV(estimator = pipline, cv = cv_anomaly, param_grid = aParams, verbose = verbose, n_jobs = n_jobs, scoring = scorer)
+        classifier.fit(X,y_anomaly)
         print(name, classifier.best_params_, classifier.best_score_)
         aTrainedModels.append(classifier)
         if bSave_Model:
