@@ -3,10 +3,11 @@ from os.path import normpath, splitext, join, isfile
 import pandas as pd
 import numpy as np
 MAX_SAMPLES_NUMBER = 1000000
+MIN_SEG_DUR = 0.5
 def Get_Segnments_From_TextGrid_Short(TextGrid_File,Speaker='CHILD'):
     with open(TextGrid_File,'r') as fTextGrid:
         TextGrid_content = fTextGrid.read().splitlines()
-    aSegments = [(TextGrid_content[i-2],TextGrid_content[i-1]) for i in range(len(TextGrid_content)) if TextGrid_content[i].find(Speaker)!=-1]
+    aSegments = [[float(TextGrid_content[i-2]),float(TextGrid_content[i-1]),float(TextGrid_content[i-1])-float(TextGrid_content[i-2])] for i in range(len(TextGrid_content)) if TextGrid_content[i].find(Speaker)!=-1]
     return aSegments
 
 def Select_Data(Dataset_Folder, TextGrid_Folder, Sessions='', Tasks=[]):#, Train_Spkrs_List=[],Test_Spkrs_List=[]):
@@ -46,12 +47,18 @@ def Select_Data(Dataset_Folder, TextGrid_Folder, Sessions='', Tasks=[]):#, Train
     return dWaves_Segments #_Train, dWaves_Segments_Test
 
 def Write_Wave_Segments_To_File(dWaves_Segments,sOutput_File):
+    iExcSeg = iIncSeg = 0
     with open(sOutput_File,'w') as fOutput_File:
         for sWave_File in dWaves_Segments:
             for tSegment in dWaves_Segments[sWave_File]:
-                print(';'.join([sWave_File] + [str(i) for i in tSegment]), file = fOutput_File)
-    return
-
+                fStart, fEnd,fDur = tSegment
+                if fDur < MIN_SEG_DUR:
+                    print(sWave_File,fStart, fEnd,fDur)
+                    iExcSeg += 1
+                else:
+                    print(';'.join([sWave_File] + [str(i) for i in (fStart, fEnd)]), file = fOutput_File)
+                    iIncSeg += 1
+    return iExcSeg, iIncSeg
 
 def Extract_Features_openSmile(sWave_Segments_File, sConfig_File='../openSmile/config/gemaps/GeMAPSv01a.conf', sSegment_Level_csv_File='output_GeMAPs.csv', sFram_Level_csv_File=''):
     with open(sWave_Segments_File) as fSegments:
