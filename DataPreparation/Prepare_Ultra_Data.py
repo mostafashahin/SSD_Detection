@@ -2,6 +2,7 @@ import glob, os, subprocess
 from os.path import normpath, splitext, join, isfile
 import pandas as pd
 import numpy as np
+from scipy import stats
 MAX_SAMPLES_NUMBER = 1000000
 MIN_SEG_DUR = 0.5
 def Get_Segnments_From_TextGrid_Short(TextGrid_File,Speaker='CHILD'):
@@ -88,7 +89,7 @@ def Extract_Features_openSmile(sWave_Segments_File, sConfig_File='../openSmile/c
             subprocess.run(command)
     return
 
-def Split_Wavs_Train_Test_From_Speaker_List(aDataSets,sSplitFile,cv=False,nDim = 63):
+def Split_Wavs_Train_Test_From_Speaker_List(aDataSets,sSplitFile, bRemoveOutliers = False, cv=False,nDim = 63):
     X_all = np.empty((MAX_SAMPLES_NUMBER,nDim),dtype=float)
     y_all = np.zeros((MAX_SAMPLES_NUMBER),dtype=int)
     aSpkrs_all = []
@@ -106,6 +107,10 @@ def Split_Wavs_Train_Test_From_Speaker_List(aDataSets,sSplitFile,cv=False,nDim =
     for dataset in aDataSets:
         sDataset_Name, pdDataset_Data = dataset
         aDataset_Mask = pdSplitData['dataset'] == sDataset_Name
+        if bRemoveOutliers:
+            iNumOriginalRaws = len(pdDataset_Data)
+            pdDataset_Data = pdDataset_Data[(np.abs(stats.zscore(pdDataset_Data.iloc[:,2:])) < 3).all(axis=1)]
+            print('Remove %d Outliers of %d items from %s' % (iNumOriginalRaws-len(pdDataset_Data),iNumOriginalRaws,sDataset_Name))
         X = pdDataset_Data.iloc[:,2:].values
         y = np.zeros(X.shape[0])
         aSpeakers = [ls[-4:-1] for ls in pdDataset_Data['name']]
