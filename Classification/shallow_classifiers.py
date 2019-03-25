@@ -25,7 +25,7 @@ dParams_OCSVM_rbf_gamma = {'OCSVM__kernel':['rbf','sigmoid'],'OCSVM__nu':nu,'OCS
 anomaly_detectors[OneClassSVM()] = ['OCSVM', dParams_OCSVM_linear, dParams_OCSVM_rbf_gamma]
 
 scaler = MinMaxScaler(feature_range=(-3, 3))
-#Scaler = StandardScaler()
+#scaler = StandardScaler()
 
 scorer = make_scorer(balanced_accuracy_score)
 
@@ -58,9 +58,11 @@ def GridSearchAnomaly(X, y, cv=5, iMain_class = 0, bSave_Model = False, prefix =
     if hasattr(cv,'__iter__'):
         cv_anomaly = copy.deepcopy(cv)
         for part in cv_anomaly:
-            part[0] = part[0][y_anomaly[part[0]] == 1]
+            part[0] = np.intersect1d(part[0],np.where(y_anomaly==1)[0])
 
     print(y.min(),y.max(),y_anomaly.min(),y_anomaly.max())
+    for part in cv_anomaly:
+        print(part[0].shape,y_anomaly[part[0]].max(),y_anomaly[part[0]].min())#cv_anomaly[1][0].shape,cv_anomaly[2][0].shape,cv_anomaly[3][0].shape,cv_anomaly[4][0].shape,y_ano)
     for detector in anomaly_detectors:
         name, aParams = anomaly_detectors[detector][0], anomaly_detectors[detector][1:]
         pipline = Pipeline([('scaler',scaler),(name,detector)])

@@ -10,7 +10,7 @@ def Get_Segnments_From_TextGrid_Short(TextGrid_File,Speaker='CHILD'):
     aSegments = [[float(TextGrid_content[i-2]),float(TextGrid_content[i-1]),float(TextGrid_content[i-1])-float(TextGrid_content[i-2])] for i in range(len(TextGrid_content)) if TextGrid_content[i].find(Speaker)!=-1]
     return aSegments
 
-def Select_Data(Dataset_Folder, TextGrid_Folder, Sessions='', Tasks=[]):#, Train_Spkrs_List=[],Test_Spkrs_List=[]):
+def Select_Data(Dataset_Folder, TextGrid_Folder, Sessions='', Tasks=[], bConvertTo16 = True):#, Train_Spkrs_List=[],Test_Spkrs_List=[]):
     #List All wavs in the Wave_Folder recercievely
     dWaves_Segments = {}
     #dWaves_Segments_Test  = {}
@@ -23,10 +23,23 @@ def Select_Data(Dataset_Folder, TextGrid_Folder, Sessions='', Tasks=[]):#, Train
             #    dWaves_Segments = dWaves_Segments_Train
             #else:
             #    dWaves_Segments = dWaves_Segments_Test
+            if bConvertTo16:
+                print('Converting ',sWave_File)
+                sWave_File_16 = splitext(sWave_File)[0]+'_16.wav'
+                if not isfile(sWave_File_16):
+                    command = ['sox',sWave_File,'-r','16000',sWave_File_16]
+                    subprocess.run(command)
+
             sTextGrid_Name = '-'.join([sSpeakerID, sUttID])+'.TextGrid'
             sTextGrid_File = join(TextGrid_Folder,sTextGrid_Name)
             if isfile(sTextGrid_File):
-                dWaves_Segments[sWave_File+sSpeakerID] = Get_Segnments_From_TextGrid_Short(sTextGrid_File)
+                if bConvertTo16:
+                    print('Converting ',sWave_File)
+                    sWave_File_16 = splitext(sWave_File)[0]+'_16.wav'
+                    if not isfile(sWave_File_16):
+                        command = ['sox',sWave_File,'-r','16000',sWave_File_16]
+                        subprocess.run(command)
+                dWaves_Segments[sWave_File_16+sSpeakerID] = Get_Segnments_From_TextGrid_Short(sTextGrid_File)
             else:
                 print(sTextGrid_File)
             #lWavs_TextGrids.append((sWave_File,os.path.join(TextGrid_Folder,sTextGrid_Name)))
@@ -40,7 +53,12 @@ def Select_Data(Dataset_Folder, TextGrid_Folder, Sessions='', Tasks=[]):#, Train
                 sTextGrid_Name = '-'.join([sSpeakerID, sSessionID, sUttID])+'.TextGrid'
                 sTextGrid_File = join(TextGrid_Folder,sTextGrid_Name)
                 if isfile(sTextGrid_File):
-                    dWaves_Segments[sWave_File+sSpeakerID] = Get_Segnments_From_TextGrid_Short(sTextGrid_File)
+                    if bConvertTo16:
+                        print('Converting ',sWave_File)
+                        sWave_File_16 = splitext(sWave_File)[0]+'_16.wav'
+                        command = ['sox',sWave_File,'-r','16000',sWave_File_16]
+                        subprocess.run(command)
+                    dWaves_Segments[sWave_File_16+sSpeakerID] = Get_Segnments_From_TextGrid_Short(sTextGrid_File)
                 else:
                     print(sTextGrid_File)
                 #lWavs_TextGrids.append((sWave_File,os.path.join(TextGrid_Folder,sTextGrid_Name)))
@@ -77,6 +95,7 @@ def Split_Wavs_Train_Test_From_Speaker_List(aDataSets,sSplitFile,cv=False,nDim =
     iPnt = 0
     #Load sSplitFile
     pdSplitData = pd.read_csv(sSplitFile,sep=',')
+    #aExcSpkrs = list(pdSplitData.loc[pdSplitData['Exclude']==1,'SpkID'])
     iNum_CV = pdSplitData['CV'].max()
     print(iNum_CV,MAX_SAMPLES_NUMBER/iNum_CV)
     iNum_Classes = pdSplitData['Class'].max()
@@ -91,6 +110,7 @@ def Split_Wavs_Train_Test_From_Speaker_List(aDataSets,sSplitFile,cv=False,nDim =
         y = np.zeros(X.shape[0])
         aSpeakers = [ls[-4:-1] for ls in pdDataset_Data['name']]
         aSpkrs_all += [spkr+'_'+sDataset_Name for spkr in aSpeakers]
+        aExcSpkrs = list(pdSplitData.loc[(pdSplitData['Exclude']==1) & aDataset_Mask,'SpkID'])
         #iNum_Classes = pdSplitData['Class'].max()
         for cls in range(1,iNum_Classes+1):
             aSpkrs = list(pdSplitData.loc[(pdSplitData['Class']==cls) & aDataset_Mask,'SpkID'])
@@ -101,13 +121,15 @@ def Split_Wavs_Train_Test_From_Speaker_List(aDataSets,sSplitFile,cv=False,nDim =
         y_all[iPnt:iPnt+X.shape[0]] = y
         for iCV in range(iNum_CV):
             aSpkrs_cv = list(pdSplitData.loc[(pdSplitData['CV']==iCV+1) & aDataset_Mask,'SpkID'])
-            #print(sDataset_Name,iCV+1,aSpkrs_cv)
-            aSpkrs_cv_indx = [i+iPnt for i in range(len(aSpeakers)) if aSpeakers[i] in aSpkrs_cv]
-            aSpkrs_train_indx = [i+iPnt for i in range(len(aSpeakers)) if i+iPnt not in aSpkrs_cv_indx]
-            #print(iCV+1,len(aSpkrs_cv_indx),len(aSpkrs_train_indx))
+            print(sDataset_Name,iCV+1,aSpkrs_cv)
+            aSpkrs_cv_indx = [i+iPnt for i in range(len(aSpeakers)) if (aSpeakers[i] in aSpkrs_cv and aSpeakers[i] not in aExcSpkrs)]
+            aSpkrs_train_indx = [i+iPnt for i in range(len(aSpeakers)) if (aSpeakers[i] not in aSpkrs_cv and aSpeakers[i] not in aExcSpkrs)]
+            #aSpkrs_train_indx = [i+iPnt for i in range(len(aSpeakers)) if i+iPnt not in aSpkrs_cv_indx]
+            print(iCV+1,len(aSpkrs_cv_indx),len(aSpkrs_train_indx))
             #print(aSpkrs_cv_indx[0],aSpkrs_train_indx[0],iPnt)
             aCV[iCV][1] = np.r_[aCV[iCV][1],aSpkrs_cv_indx].astype(int)
-            aCV[iCV][0] = np.r_[aCV[iCV][0],aSpkrs_train_indx].astype(int)
+            if sDataset_Name != 'UXTDD': #This if should be removed, added only for test OGI data
+                aCV[iCV][0] = np.r_[aCV[iCV][0],aSpkrs_train_indx].astype(int)
             #print(iCV+1,aCV[iCV][1].shape, aCV[iCV][0].shape)
         iPnt += X.shape[0]
         #print(iPnt)

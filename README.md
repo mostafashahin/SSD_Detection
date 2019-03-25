@@ -18,6 +18,8 @@ Dataset Description:
 
 3- For SSD data, initially will use BaseLine sesssions (BL)
 
+4- I'll use also the OGI dataset ages,code (k - 0,b), (1 - 1,c), (2 - 2,d), (3 - 3,e), (4 - 4,f), (5 - 5,g), (6 - 6,h), (7 - 7,i), (8 - 8,j), (9 - 9,k), (10 - a,l)
+
 
 Experiments:
 
@@ -433,6 +435,47 @@ equivalentSoundLevel_dBp
 
 - Results:
 - --{'SVM__C': 10, 'SVM__gamma': 1, 'SVM__kernel': 'rbf'} Segment level (0.7872807662134181), Speaker level (0.875)
+
+
+Exp.9 :
+- Enabling the balanced feature in SVM imp. of slearn.
+- Using BL1 and BL2 from disorder data
+- GeMaps features (62)
+- Same CV setting
+
+
+- Results:
+- -- {'SVM__C': 100, 'SVM__gamma': 0.01, 'SVM__kernel': 'rbf'} 0.7592546676585075 (Segment level) 0.8571428571428572
+
+Exp. 10 : 
+- Enabling the balanced feature in SVM imp. of slearn.
+- Using BL1 and BL2 from disorder data
+- eGeMaps features (88)
+- Same CV setting
+
+
+- Results:
+- {'SVM__C': 10, 'SVM__gamma': 0.01, 'SVM__kernel': 'rbf'} 0.777557758657335 (segment lev)
+0.8571428571428571 
+
+Exp. 11 : Exclude short segments < 0.5 sec
+- Enabling the balanced feature in SVM imp. of slearn.
+- Using BL1 and BL2 from disorder data
+- GeMaps features (62)
+- Same CV setting
+
+- Results:
+- -- SVM {'SVM__C': 100, 'SVM__gamma': 0.01, 'SVM__kernel': 'rbf'} 0.7789681889052708 (SegLevel) 0.8392857142857143 (SpkLevel)
+
+Exp. 12 : Exclude short segments < 0.5 sec
+- Enabling the balanced feature in SVM imp. of slearn.
+- Using BL1 and BL2 from disorder data
+- eGeMaps features (88)
+- Same CV setting
+
+
+- Results:
+- -- SVM {'SVM__C': 10, 'SVM__gamma': 0.01, 'SVM__kernel': 'rbf'} 0.7993435496111929 (SegLevel) 0.8214285714285714 (SpkLevel)
 
 TO DO************************************************************
 1. report results on speaker level (Done)
