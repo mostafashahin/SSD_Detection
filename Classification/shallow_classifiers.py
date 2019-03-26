@@ -12,11 +12,13 @@ from sklearn.feature_selection import RFECV
 estimators = {}
 anomaly_detectors = {}
 C = [100,10,1,0.1,0.01,0.001]
-gamma = [100,10,1,0.1,0.01,0.001]
+#gamma = [100,10,1,0.1,0.01,0.001]
+gamma = [1,0.1,0.01,0.001,0.0001,0.00001]
 #kernels = ['linear','rbf','sigmoid','poly']
 dParams_SVC_linear = {'SVM__kernel':['linear'],'SVM__C':C}
-dParams_SVC_rbf_gamma = {'SVM__kernel':['rbf','sigmoid'],'SVM__C':C,'SVM__gamma':gamma}
-estimators[SVC(class_weight='balanced')] = ['SVM',dParams_SVC_linear,dParams_SVC_rbf_gamma]
+dParams_SVC_rbf_sigmoid = {'SVM__kernel':['rbf','sigmoid'],'SVM__C':C,'SVM__gamma':gamma}
+dParams_SVC_rbf = {'SVM__kernel':['rbf'],'SVM__C':C,'SVM__gamma':gamma}
+estimators[SVC(class_weight='balanced')] = ['SVM',dParams_SVC_linear,dParams_SVC_rbf]
 
 #oneclass SVM params
 nu = [0.1, 0.2, 0.3, 0.5, 0.7, 0.9, 1]
@@ -75,7 +77,7 @@ def GridSearchAnomaly(X, y, cv=5, iMain_class = 0, bSave_Model = False, prefix =
     return aTrainedModels
 
 #The estimator could be a pipeline with transformers and estimator
-def Score_CV(estimator, X, y, cv = 5, aSpeaker_List = [], SpkrLevel = 'None', scorers = [('balanced_accuracy_score',balanced_accuracy_score)],verbose=0):
+def Score_CV(estimator, X, y, cv = 5, aSpeaker_List = [], SpkrLevel = 'None', scorers = [('balanced_accuracy_score',balanced_accuracy_score)], verbose=0, bAnomaly=False, iMain_class = 0):
     iDim = X.shape[1]
     y_ref = np.zeros(0,dtype=int)
     y_predict = np.zeros(0,dtype=int)
@@ -87,6 +89,12 @@ def Score_CV(estimator, X, y, cv = 5, aSpeaker_List = [], SpkrLevel = 'None', sc
         X_test, y_test = X[part[1]], y[part[1]]
         estimator.fit(X_train,y_train)
         y_p = estimator.predict(X_test)
+        if bAnomaly:
+            aMain_class_Mask = (y_p == 1)
+            aAnomaly_Mask = np.invert(aMain_class_Mask)
+            y_p[aMain_class_Mask] = iMain_class
+            y_p[aAnomaly_Mask] = int(not iMain_class)
+
         y_ref = np.r_[y_ref,y_test]
         y_predict = np.r_[y_predict,y_p]
         spkrs_test = aSpeaker_List[part[1]]

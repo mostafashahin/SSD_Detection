@@ -477,6 +477,56 @@ Exp. 12 : Exclude short segments < 0.5 sec
 - Results:
 - -- SVM {'SVM__C': 10, 'SVM__gamma': 0.01, 'SVM__kernel': 'rbf'} 0.7993435496111929 (SegLevel) 0.8214285714285714 (SpkLevel)
 
+
+Exp. 13: Exclude outliers
+- Same as Exp. 12
+- eGeMAPs
+
+- --Results
+SVM {'SVM__C': 1, 'SVM__gamma': 0.01, 'SVM__kernel': 'rbf'} 0.8153228802822636 (Seglevel) 0.8062170514451917 (Subject Level)
+
+
+Exp. 14: Exclude outliers
+- Same as Exp. 11
+- GeMAPs
+SVM {'SVM__C': 10, 'SVM__gamma': 0.01, 'SVM__kernel': 'rbf'} 0.7945486585313908 (Seglevel) 0.8035714285714286
+
+
+Exp. 15: OCSVM
+- Train with UltraSuit uxtd
+- Using BL1 and BL2 from disorder data
+- Exclude < 0.5 sec
+- GeMAPs (62)
+- Results:
+- --OCSVM {'OCSVM__kernel': 'linear', 'OCSVM__nu': 0.5} 0.5416350375507831 (SegLevel)
+- --OCSVM {'OCSVM__kernel': 'linear', 'OCSVM__nu': 0.3} 0.5644441992939702 (SegLevel) (No Outliers)
+
+Exp. 16: OCSVM
+- Train with UltraSuit uxtd
+- Using BL1 and BL2 from disorder
+- Execlude < 0.5
+- eGeMAPs (88)
+
+- Results:
+- -- OCSVM {'OCSVM__kernel': 'linear', 'OCSVM__nu': 0.5} 0.5470859811741435
+- -- OCSVM {'OCSVM__kernel': 'linear', 'OCSVM__nu': 0.3} 0.5841477013521587 (No Outlier)
+
+Exp. 17:
+- Use OGI dataset (small part) + UXTD
+- GeMAPs - some features
+
+- Results:
+- --SVM {'SVM__C': 10, 'SVM__gamma': 0.1, 'SVM__kernel': 'rbf'} 0.7342188237626028 (SegLevel)
+0.8035714285714286 (SpkrLevel)
+
+Exp. 18:
+- Use OGI dataset (small part) + UXTD
+- GeMAPs - some features
+
+- Results:
+- -- SVM {'SVM__C': 10, 'SVM__gamma': 0.1, 'SVM__kernel': 'rbf'} 0.7584526462497944 (SegLevel)
+0.7857142857142858 (SpkrLevel)
+
 TO DO************************************************************
 1. report results on speaker level (Done)
 2. feature selection (Done RFE)
