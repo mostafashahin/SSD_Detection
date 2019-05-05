@@ -8,6 +8,11 @@ from sklearn.preprocessing import MinMaxScaler, StandardScaler
 from sklearn.pipeline import Pipeline
 from sklearn.metrics import f1_score, make_scorer, balanced_accuracy_score
 from sklearn.feature_selection import RFECV
+from sklearn.base import TransformerMixin
+from keras.layers import Input, Dense
+from keras.models import Model
+
+
 #svm params
 estimators = {}
 anomaly_detectors = {}
@@ -36,7 +41,44 @@ class PipelineRFE(Pipeline):
         super(PipelineRFE, self).fit(X, y, **fit_params)
         self.coef_ = self.steps[-1][-1].coef_
         return self
+
+class autoencoder_transform(TransformerMixin):
+  def __init__(self,encod_dim = 10,input_dim = 88):
+    # this is our input placeholder
+    print(encod_dim)
+    input_ = Input(shape=(input_dim,))
+    # "encoded" is the encoded representation of the input
+    encoded = Dense(encod_dim, activation='relu')(input_)
+    # "decoded" is the lossy reconstruction of the input
+    decoded = Dense(88, activation='sigmoid')(encoded)
+    # this model maps an input to its reconstruction
+    autoencoder = Model(input_, decoded)
+    # this model maps an input to its encoded representation
+    encoder = Model(input_, encoded)
+    # create a placeholder for an encoded (32-dimensional) input
+    encoded_input = Input(shape=(encod_dim,))
+    # retrieve the last layer of the autoencoder model
+    decoder_layer = autoencoder.layers[-1]
+    # create the decoder model
+    decoder = Model(encoded_input, decoder_layer(encoded_input))
+    autoencoder.compile(optimizer='adadelta', loss='mean_squared_error')
+    self.autoencoder_ = autoencoder
+    self.encoder_ = encoder
+    self.decoder_ = decoder
     
+  def fit(self, X, y=None):
+    self.autoencoder_.fit(X_train, X_train,
+                epochs=50,
+                batch_size=256,
+                shuffle=True,
+                validation_split=0.2)
+    return self
+  
+  def transform(self,X):
+    X_enc = self.encoder_.predict(X)
+    return X_enc
+
+
 def GridSearchShallow(X, y, cv = 5, bSave_Model = False, prefix = '', verbose = 0, n_jobs = None):
     aTrainedModels = []
     for estimator in estimators:
@@ -62,14 +104,30 @@ def GridSearchAnomaly(X, y, cv=5, iMain_class = 0, bSave_Model = False, prefix =
         for part in cv_anomaly:
             part[0] = np.intersect1d(part[0],np.where(y_anomaly==1)[0])
 
-    print(y.min(),y.max(),y_anomaly.min(),y_anomaly.max())
+    print(np.unique(y),np.unique(y_anomaly))
     for part in cv_anomaly:
-        print(part[0].shape,y_anomaly[part[0]].max(),y_anomaly[part[0]].min())#cv_anomaly[1][0].shape,cv_anomaly[2][0].shape,cv_anomaly[3][0].shape,cv_anomaly[4][0].shape,y_ano)
+        print(part[0].shape,np.unique(y_anomaly[part[0]]))#cv_anomaly[1][0].shape,cv_anomaly[2][0].shape,cv_anomaly[3][0].shape,cv_anomaly[4][0].shape,y_ano)
     for detector in anomaly_detectors:
         name, aParams = anomaly_detectors[detector][0], anomaly_detectors[detector][1:]
         pipline = Pipeline([('scaler',scaler),(name,detector)])
         classifier = GridSearchCV(estimator = pipline, cv = cv_anomaly, param_grid = aParams, verbose = verbose, n_jobs = n_jobs, scoring = scorer)
         classifier.fit(X,y_anomaly)
+        print(name, classifier.best_params_, classifier.best_score_)
+        aTrainedModels.append(classifier)
+        if bSave_Model:
+            dump(classifier,name+'_'+str(DT.datetime.now().strftime("%Y-%m-%d_%H:%M:%S"))+prefix+'.jbl')
+    return aTrainedModels
+
+
+def GridSearchEmbedding(X, y, cv = 5, encod_dim = 44, input_dim = 88, bSave_Model = False, prefix = '', verbose = 0, n_jobs = None):
+    ndim = X.shape[1]
+    encoder = autoencoder_transform(encod_dim = encode_dim,input_dim = input_dim)
+    aTrainedModels = []
+    for estimator in estimators:
+        name, aParams = estimators[estimator][0],estimators[estimator][1:]
+        pipline = Pipeline([('scaler',scaler),('encoder',encoder),(name,estimator)])
+        classifier = GridSearchCV(estimator = pipline, cv = cv, param_grid = aParams, verbose = verbose, n_jobs = n_jobs, scoring = scorer)
+        classifier.fit(X,y)
         print(name, classifier.best_params_, classifier.best_score_)
         aTrainedModels.append(classifier)
         if bSave_Model:
@@ -89,6 +147,7 @@ def Score_CV(estimator, X, y, cv = 5, aSpeaker_List = [], SpkrLevel = 'None', sc
         X_test, y_test = X[part[1]], y[part[1]]
         estimator.fit(X_train,y_train)
         y_p = estimator.predict(X_test)
+        print(balanced_accuracy_score(y_test,y_p))
         if bAnomaly:
             aMain_class_Mask = (y_p == 1)
             aAnomaly_Mask = np.invert(aMain_class_Mask)
