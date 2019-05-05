@@ -43,28 +43,33 @@ class PipelineRFE(Pipeline):
         return self
 
 class autoencoder_transform(TransformerMixin):
-  def __init__(self,encod_dim = 10,input_dim = 88):
+  def __init__(self,encod_dim = [44,22],input_dim = 88):
     # this is our input placeholder
     print(encod_dim)
     input_ = Input(shape=(input_dim,))
     # "encoded" is the encoded representation of the input
-    encoded = Dense(encod_dim, activation='relu')(input_)
+    encoded = Dense(encod_dim[0], activation='relu')(input_)
+    for d in encod_dim[1:]:
+        encoded = Dense(encod_dim, activation='relu')(encoded)
     # "decoded" is the lossy reconstruction of the input
-    decoded = Dense(88, activation='sigmoid')(encoded)
+    decoded = encoded
+    for d in encod_dim[::-1][1:]:
+        decoded = Dense(d,activation='relu')(decoded)
+    decoded = Dense(input_dim, activation='sigmoid')(encoded)
     # this model maps an input to its reconstruction
     autoencoder = Model(input_, decoded)
     # this model maps an input to its encoded representation
     encoder = Model(input_, encoded)
     # create a placeholder for an encoded (32-dimensional) input
-    encoded_input = Input(shape=(encod_dim,))
+    #encoded_input = Input(shape=(encod_dim[-1],))
     # retrieve the last layer of the autoencoder model
-    decoder_layer = autoencoder.layers[-1]
+    #decoder_layer = autoencoder.layers[-1]
     # create the decoder model
-    decoder = Model(encoded_input, decoder_layer(encoded_input))
+    #decoder = Model(encoded_input, decoder_layer(encoded_input))
     autoencoder.compile(optimizer='adadelta', loss='mean_squared_error')
     self.autoencoder_ = autoencoder
     self.encoder_ = encoder
-    self.decoder_ = decoder
+    self.decoder_ = None#decoder
     
   def fit(self, X, y=None):
     self.autoencoder_.fit(X, X,
@@ -78,9 +83,9 @@ class autoencoder_transform(TransformerMixin):
     X_enc = self.encoder_.predict(X)
     return X_enc
 
-  def inverse_transform(self,X):
-      X_decod = self.decoder_.predict(X)
-      return X_decod
+  #def inverse_transform(self,X):
+  #    X_decod = self.decoder_.predict(X)
+  #    return X_decod
 
 def GridSearchShallow(X, y, cv = 5, bSave_Model = False, prefix = '', verbose = 0, n_jobs = None):
     aTrainedModels = []
