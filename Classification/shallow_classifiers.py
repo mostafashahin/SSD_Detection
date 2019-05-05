@@ -78,6 +78,9 @@ class autoencoder_transform(TransformerMixin):
     X_enc = self.encoder_.predict(X)
     return X_enc
 
+  def inverse_transform(self,X):
+      X_decod = self.decoder_.predict(X)
+      return X_decod
 
 def GridSearchShallow(X, y, cv = 5, bSave_Model = False, prefix = '', verbose = 0, n_jobs = None):
     aTrainedModels = []
