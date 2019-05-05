@@ -121,7 +121,7 @@ def GridSearchAnomaly(X, y, cv=5, iMain_class = 0, bSave_Model = False, prefix =
 
 def GridSearchEmbedding(X, y, cv = 5, encod_dim = 44, input_dim = 88, bSave_Model = False, prefix = '', verbose = 0, n_jobs = None):
     ndim = X.shape[1]
-    encoder = autoencoder_transform(encod_dim = encode_dim,input_dim = input_dim)
+    encoder = autoencoder_transform(encod_dim = encod_dim,input_dim = input_dim)
     aTrainedModels = []
     for estimator in estimators:
         name, aParams = estimators[estimator][0],estimators[estimator][1:]
