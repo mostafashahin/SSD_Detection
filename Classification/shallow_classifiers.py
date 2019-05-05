@@ -50,7 +50,7 @@ class autoencoder_transform(TransformerMixin):
     # "encoded" is the encoded representation of the input
     encoded = Dense(encod_dim[0], activation='relu')(input_)
     for d in encod_dim[1:]:
-        encoded = Dense(encod_dim, activation='relu')(encoded)
+        encoded = Dense(d, activation='relu')(encoded)
     # "decoded" is the lossy reconstruction of the input
     decoded = encoded
     for d in encod_dim[::-1][1:]:
