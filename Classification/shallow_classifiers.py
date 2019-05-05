@@ -31,7 +31,7 @@ dParams_OCSVM_linear = {'OCSVM__kernel':['linear'],'OCSVM__nu':nu}
 dParams_OCSVM_rbf_gamma = {'OCSVM__kernel':['rbf','sigmoid'],'OCSVM__nu':nu,'OCSVM__gamma':gamma}
 anomaly_detectors[OneClassSVM()] = ['OCSVM', dParams_OCSVM_linear, dParams_OCSVM_rbf_gamma]
 
-scaler = MinMaxScaler(feature_range=(-3, 3))
+scaler = MinMaxScaler()
 #scaler = StandardScaler()
 
 scorer = make_scorer(balanced_accuracy_score)
