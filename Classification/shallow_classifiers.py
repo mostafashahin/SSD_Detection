@@ -67,7 +67,7 @@ class autoencoder_transform(TransformerMixin):
     self.decoder_ = decoder
     
   def fit(self, X, y=None):
-    self.autoencoder_.fit(X_train, X_train,
+    self.autoencoder_.fit(X, X,
                 epochs=50,
                 batch_size=256,
                 shuffle=True,
