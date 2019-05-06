@@ -72,7 +72,8 @@ class autoencoder_transform(TransformerMixin):
     self.decoder_ = None#decoder
     
   def fit(self, X, y=None):
-    self.autoencoder_.fit(X, X,
+    X_rand = np.random.permutation(X)
+    self.autoencoder_.fit(X_rand, X_rand,
                 epochs=50,
                 batch_size=256,
                 shuffle=True,
